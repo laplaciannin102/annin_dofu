@@ -45,7 +45,8 @@ with open(file=license_path, mode='r', encoding='utf-8') as f:
     license_txt = f.read()
 
 # get version(__version__)
-exec(open('{}/_version.py'.format(pkg_name)).read())
+version_fpath = '{}/_version.py'.format(pkg_name)
+exec(open(version_fpath, mode='r', encoding='utf-8').read())
 
 
 

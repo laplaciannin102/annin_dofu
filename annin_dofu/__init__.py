@@ -25,6 +25,7 @@ from ._version import __version__
 """
 # import original modules
 from .calc import *
+from .matrix import *
 from .parallel import *
 from .stats import *
 from .utils import *
