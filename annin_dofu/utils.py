@@ -11,6 +11,9 @@
 @history:
     2021/10/13:
         初期版作成.
+    
+    2021/11/22:
+        get_dir_tree追加.
 """
 
 
@@ -41,7 +44,8 @@ __all__ = [
     'arrange_path_parser',
     'list_segments',
     'pro_makedirs',
-    'make_empty_file'
+    'make_empty_file',
+    'get_dir_tree'
 ]
 
 
@@ -266,4 +270,180 @@ def make_empty_file(dir_path='./', file_name='.gitkeep', encoding='utf-8'):
     with open(file_path, mode='w', encoding=encoding) as f:
         f.write('')
 
+
+def _get_dir_tree_rescursive(
+    dir_path,
+    pre_txt='',
+    indent='  ',
+    name_prefix='─',
+    linesep='auto',
+    add_dir_slash=False,
+    max_depth=-1,
+    depth=0
+):
+    """
+    get_dir_tree内でのみ使用する関数.
+    通常呼び出されない.
+    tree出力のため再帰的に呼び出される.
+    """
+    # 改行文字列
+    if linesep == 'auto':
+        linesep = os.linesep
+    
+    pre_txt = str(pre_txt)
+    paths_list = sorted(list_segments(dir_path=dir_path, forced_slash=True))
+    dir_tree_txt = ''
+
+    for path in paths_list:
+        
+        # ディレクトリかどうか.
+        is_dir = os.path.isdir(path)
+
+        # 親ディレクトリの中で最後のパスかどうか.
+        is_last = False
+
+        if path == paths_list[-1]:
+            is_last = True
+        
+        # file or directory name
+        name = path.split('/')[-1]
+        
+        # ディレクトリの最後にスラッシュを付ける場合.
+        if is_dir and add_dir_slash and (name[-1]!='/'):
+            name += '/'
+        
+        # 最後のパス.
+        if is_last:
+            branch_txt = '└'
+            child_parent_branch_txt = '{indent}'.format(
+                indent=indent
+            )
+        # 最後のパスでないとき.
+        else:
+            branch_txt = '├'
+            child_parent_branch_txt = '│'
+
+        # 1行分の文字列
+        line_txt = '{pre_txt}{branch_txt}{name_prefix}{name}{linesep}'.format(
+            pre_txt=pre_txt,
+            branch_txt=branch_txt,
+            name_prefix=name_prefix,
+            name=name,
+            linesep=linesep
+        )
+        
+        child_pre_txt = '{pre_txt}{child_parent_branch_txt}{indent}'.format(
+            pre_txt=pre_txt,
+            indent=indent,
+            child_parent_branch_txt=child_parent_branch_txt
+        )
+
+        dir_tree_txt += line_txt
+
+        # pathがディレクトリを指すものだった場合,
+        # さらに下の階層についてもディレクトリ構造を調べる.
+        if os.path.isdir(path):
+            
+            # 深さを1深くする.
+            child_depth = depth + 1
+            
+            # 最下層まで探索する(-1) or 最深層まで達してない場合.
+            if (max_depth == -1) or (child_depth <= max_depth):
+
+                dir_tree_txt += _get_dir_tree_rescursive(
+                    dir_path=path,
+                    pre_txt=child_pre_txt,
+                    indent=indent,
+                    name_prefix=name_prefix,
+                    linesep=linesep,
+                    add_dir_slash=add_dir_slash,
+                    max_depth=max_depth,
+                    depth=child_depth
+                )
+
+    return dir_tree_txt
+
+
+def get_dir_tree(
+    dir_path='./',
+    indent='  ',
+    name_prefix='─',
+    linesep='auto',
+    add_dir_slash=False,
+    max_depth=-1,
+    print_tree=True
+):
+    """
+    dir_path以下のディレクトリ構造を木の形式の文字列として返す.
+    print_treeをTrueにした時, 標準出力する.
+    
+    Args:
+        dir_path: str, optional(default='./')
+            検索対象のディレクトリのパス.
+        
+        indent: str, optional(default='  ')
+            インデントに使用する文字列.
+        
+        name_prefix: str, optional(default='─')
+            ファイル名またはディレクトリ名の頭に付ける文字列.
+        
+        linesep: str, optional(default='auto')
+            改行に使用する文字列.
+            'auto': OSで使用される改行文字列を自動で取得する.
+            '\\n': LF
+            '\\r\\n': CRLF
+        
+        add_dir_slash: bool, optional(default=False)
+            ディレクトリ名の最後にスラッシュを付けるかどうか.
+        
+        max_depth: int, optional(default=-1)
+            検索対象とするディレクトリの最大の深さ.
+            -1: 最深層まで検索する.
+            0: 最も浅い層のみ検索する.
+        
+        print_tree: bool, optional(default=True)
+            ディレクトリ構造の木の形式の文字列を標準出力するかどうか.
+    
+    Returns:
+        dir_tree_txt: str
+            dir_path以下のディレクトリ構造の木の形式の文字列.
+    
+    Examples:
+        >> get_dir_tree('../')
+    """
+    dir_path = str(dir_path)
+    indent = str(indent)
+    name_prefix = str(name_prefix)
+    linesep = str(linesep)
+    
+    # 改行文字列
+    if linesep == 'auto':
+        linesep = os.linesep
+    
+    tmp_dir_path = dir_path
+    
+    if add_dir_slash and (tmp_dir_path[-1]!='/'):
+        tmp_dir_path += '/'
+    
+    dir_tree_txt = '{tmp_dir_path}{linesep}'.format(
+        tmp_dir_path=tmp_dir_path,
+        linesep=linesep
+    )
+    
+    # ディレクトリ木構造の文字列を取得する.
+    dir_tree_txt += _get_dir_tree_rescursive(
+        dir_path=dir_path,
+        indent=indent,
+        name_prefix=name_prefix,
+        linesep=linesep,
+        add_dir_slash=add_dir_slash,
+        max_depth=max_depth,
+        depth=0
+    )
+    
+    # ディレクトリ木構造を標準出力する場合.
+    if print_tree:
+        print(dir_tree_txt)
+
+    return dir_tree_txt
 
