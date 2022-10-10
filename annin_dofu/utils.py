@@ -4,7 +4,7 @@
 
 """
 @author: laplaciannin102(Kosuke Asada)
-@date: 2021/10/13
+@date: 2022/10/07
 
 便利modules.
 
@@ -14,6 +14,9 @@
     
     2021/11/22:
         get_dir_tree追加.
+    
+    2022/10/07:
+        list_segments修正.
 """
 
 
@@ -24,6 +27,7 @@
 
 import sys, os
 import gc
+import warnings
 import time
 from glob import glob
 from pathlib import Path
@@ -141,10 +145,11 @@ def arrange_path_parser(path, is_directory=False):
 
 def list_segments(
     dir_path='./',
-    rescursive=False,
+    recursive=False,
     only_fname=False,
     extension=None,
-    forced_slash=False
+    forced_slash=False,
+    rescursive=None
 ):
     """
     dir_path以下にあるファイルの相対パスのリストを返す.
@@ -153,7 +158,7 @@ def list_segments(
         dir_path: str, optional(default='./')
             検索対象のディレクトリのパス.
 
-        rescursive: bool, optional(default=False)
+        recursive: bool, optional(default=False)
             再帰的に検索するかどうか.
             Trueの場合, より深い階層に存在するファイルのパスもリストに格納して返す.
         
@@ -172,12 +177,18 @@ def list_segments(
         paths_list: list of str
             ファイルの相対パスのリスト.
     """
+    # 古い引数が設定されていた場合
+    if (not rescursive is None):
+        temp_message = 'warning: "rescursive" is old arguments. Please use "recursive".'
+        warnings.warn(temp_message, Warning, stacklevel=2)
+        recursive = rescursive
+    
     # ディレクトリ
     dpath_obj = Path(dir_path)
 
     # 再帰的に検索するかどうか
     resc_path = './*'
-    if rescursive:
+    if recursive:
         resc_path = '**/*'
 
     # 拡張子
@@ -271,7 +282,7 @@ def make_empty_file(dir_path='./', file_name='.gitkeep', encoding='utf-8'):
         f.write('')
 
 
-def _get_dir_tree_rescursive(
+def _get_dir_tree_recursive(
     dir_path,
     pre_txt='',
     indent='  ',
@@ -350,7 +361,7 @@ def _get_dir_tree_rescursive(
             # 最下層まで探索する(-1) or 最深層まで達してない場合.
             if (max_depth == -1) or (child_depth <= max_depth):
 
-                dir_tree_txt += _get_dir_tree_rescursive(
+                dir_tree_txt += _get_dir_tree_recursive(
                     dir_path=path,
                     pre_txt=child_pre_txt,
                     indent=indent,
@@ -431,7 +442,7 @@ def get_dir_tree(
     )
     
     # ディレクトリ木構造の文字列を取得する.
-    dir_tree_txt += _get_dir_tree_rescursive(
+    dir_tree_txt += _get_dir_tree_recursive(
         dir_path=dir_path,
         indent=indent,
         name_prefix=name_prefix,

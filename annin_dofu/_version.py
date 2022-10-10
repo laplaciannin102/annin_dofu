@@ -4,13 +4,16 @@
 
 """
 @author: laplaciannin102(Kosuke Asada)
-@date: 2021/10/13
+@date: 2022/10/10
 
 version management script.
 
 @history:
     2021/10/13:
-        初期版作成.
+        初期版作成．
+
+    2022/10/10:
+        v0.0.3
 """
 
 
@@ -20,5 +23,5 @@ version management script.
 # --------------------------------------------------------------------------------
 
 # version
-__version__ = '0.0.2'
+__version__ = '0.0.3'
 
